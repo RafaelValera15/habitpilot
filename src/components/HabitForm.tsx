@@ -7,11 +7,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { type Habit, type HabitInput } from "@/lib/firestore";
 
+const CATEGORY_OPTIONS = [
+  "Fitness",
+  "Finance",
+  "Mindfulness",
+  "Productivity",
+  "Learning",
+  "Nutrition",
+  "Wellness",
+  "Other",
+] as const;
+
+const CATEGORY_SET = new Set<string>(CATEGORY_OPTIONS);
+
 const habitSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   description: z.string().max(200, "Keep it brief").optional().or(z.literal("")),
   goal: z.string().min(2, "Goal must be at least 2 characters"),
-  category: z.string().min(2, "Category required"),
+  category: z
+    .string()
+    .refine((value) => CATEGORY_SET.has(value), {
+      message: "Choose a category",
+    }),
   frequency: z.enum(["daily", "weekly", "monthly"], {
     message: "Choose a frequency",
   }),
@@ -48,7 +65,9 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
         title: initialHabit.title,
         description: initialHabit.description ?? "",
         goal: initialHabit.goal,
-        category: initialHabit.category,
+        category: CATEGORY_SET.has(initialHabit.category)
+          ? initialHabit.category
+          : "Other",
         frequency: (initialHabit.frequency as HabitFormValues["frequency"]) ?? "daily",
       });
     }
@@ -100,13 +119,21 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
           <label htmlFor="category" className="text-sm font-medium text-slate-700">
             Category
           </label>
-          <input
+          <select
             id="category"
-            type="text"
             {...register("category")}
             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            placeholder="Fitness"
-          />
+            defaultValue=""
+          >
+            <option value="" disabled hidden>
+              Select a category
+            </option>
+            {CATEGORY_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
           {errors.category && <p className="text-xs text-rose-500">{errors.category.message}</p>}
         </div>
       </div>
