@@ -1,0 +1,49 @@
+import { initializeApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
+import { getAnalytics, isSupported as isAnalyticsSupported, type Analytics } from "firebase/analytics";
+import { getAuth, type Auth } from "firebase/auth";
+
+const firebaseConfig: FirebaseOptions = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
+const assertFirebaseConfig = () => {
+  if (!firebaseConfig.apiKey) {
+    throw new Error("Firebase configuration is missing. Did you forget to set environment variables?");
+  }
+};
+
+let app: FirebaseApp | null = null;
+let analytics: Analytics | null = null;
+let auth: Auth | null = null;
+
+export const getFirebaseApp = (): FirebaseApp => {
+  if (!app) {
+    assertFirebaseConfig();
+    app = initializeApp(firebaseConfig);
+  }
+  return app;
+};
+
+export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
+  if (analytics) return analytics;
+  const firebaseApp = getFirebaseApp();
+
+  if (typeof window === "undefined") return null;
+  if (!(await isAnalyticsSupported())) return null;
+
+  analytics = getAnalytics(firebaseApp);
+  return analytics;
+};
+
+export const getFirebaseAuth = (): Auth => {
+  if (!auth) {
+    auth = getAuth(getFirebaseApp());
+  }
+  return auth;
+};
