@@ -21,7 +21,7 @@ export type HabitFrequency = "daily" | "weekly" | "monthly" | string;
 
 export interface Habit {
   id: string;
-  title: string;
+  name: string;
   description?: string;
   goal: string;
   category: string;
@@ -31,26 +31,20 @@ export interface Habit {
   completedDates: string[];
   createdAt: string;
   updatedAt: string;
+  userId: string;
 }
 
 export interface HabitInput {
-  title: string;
+  name: string;
   description?: string;
   goal: string;
   category: string;
   frequency: HabitFrequency;
 }
 
-let db: Firestore | null = null;
+const db: Firestore = getFirestore(getFirebaseApp());
 
-const getDb = (): Firestore => {
-  if (!db) {
-    db = getFirestore(getFirebaseApp());
-  }
-  return db;
-};
-
-const habitsCollection = (userId: string) => collection(getDb(), "users", userId, "habits");
+const habitsCollection = (userId: string) => collection(db, "users", userId, "habits");
 
 const serialize = (data: DocumentData, id: string): Habit => {
   const createdAt = data.createdAt?.toDate?.() ?? new Date();
@@ -58,7 +52,7 @@ const serialize = (data: DocumentData, id: string): Habit => {
 
   return {
     id,
-    title: data.title ?? data.name,
+    name: data.name,
     description: data.description,
     goal: data.goal,
     category: data.category,
@@ -68,12 +62,14 @@ const serialize = (data: DocumentData, id: string): Habit => {
     completedDates: data.completedDates ?? [],
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
+    userId: data.userId,
   };
 };
 
 export const createHabit = async (userId: string, habit: HabitInput): Promise<void> => {
   const payload = {
     ...habit,
+    userId,
     streak: 0,
     lastCompleted: null,
     completedDates: [],
@@ -108,7 +104,7 @@ export const deleteHabit = async (userId: string, habitId: string): Promise<void
 export const markHabitComplete = async (userId: string, habitId: string): Promise<void> => {
   const habitRef = doc(habitsCollection(userId), habitId);
 
-  await runTransaction(getDb(), async (transaction) => {
+  await runTransaction(db, async (transaction) => {
     const snapshot = await transaction.get(habitRef);
     if (!snapshot.exists()) {
       throw new Error("Habit no longer exists.");
