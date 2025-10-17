@@ -22,6 +22,7 @@ export type HabitFrequency = "daily" | "weekly" | "monthly" | string;
 export interface Habit {
   id: string;
   title: string;
+  name: string;
   description?: string;
   goal: string;
   category: string;
@@ -35,6 +36,11 @@ export interface Habit {
 
 export interface HabitInput {
   title: string;
+  userId: string;
+}
+
+export interface HabitInput {
+  name: string;
   description?: string;
   goal: string;
   category: string;
@@ -52,6 +58,7 @@ const serialize = (data: DocumentData, id: string): Habit => {
   return {
     id,
     title: data.title ?? data.name,
+    name: data.name,
     description: data.description,
     goal: data.goal,
     category: data.category,
@@ -61,12 +68,14 @@ const serialize = (data: DocumentData, id: string): Habit => {
     completedDates: data.completedDates ?? [],
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
+    userId: data.userId,
   };
 };
 
 export const createHabit = async (userId: string, habit: HabitInput): Promise<void> => {
   const payload = {
     ...habit,
+    userId,
     streak: 0,
     lastCompleted: null,
     completedDates: [],
