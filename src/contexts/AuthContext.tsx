@@ -17,7 +17,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { getFirebaseAnalytics, getFirebaseAuth } from "@/lib/firebase";
+import { auth, getFirebaseAnalytics } from "@/lib/firebase";
 
 interface AuthContextValue {
   user: User | null;
@@ -30,17 +30,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const isBrowser = typeof window !== "undefined";
-  const auth = useMemo(() => (isBrowser ? getFirebaseAuth() : null), [isBrowser]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return () => {};
-    }
-
     getFirebaseAnalytics().catch(() => {
       // Analytics is optional in SSR environments; ignore errors silently.
     });
@@ -51,48 +44,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    if (!auth) {
-      throw new Error("Firebase Auth is not available in this environment.");
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    if (displayName) {
+      await updateProfile(credential.user, { displayName });
     }
-
-    setLoading(true);
-
-    try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      if (displayName) {
-        await updateProfile(credential.user, { displayName });
-      }
-      setUser(credential.user);
-    } finally {
-      setLoading(false);
-    }
-  }, [auth]);
+    setUser(credential.user);
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    if (!auth) {
-      throw new Error("Firebase Auth is not available in this environment.");
-    }
-
-    setLoading(true);
-
-    try {
-      const credential = await signInWithEmailAndPassword(auth, email, password);
-      setUser(credential.user);
-    } finally {
-      setLoading(false);
-    }
-  }, [auth]);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    setUser(credential.user);
+  }, []);
 
   const signOutUser = useCallback(async () => {
-    if (!auth) {
-      throw new Error("Firebase Auth is not available in this environment.");
-    }
     await signOut(auth);
     setUser(null);
-  }, [auth]);
+  }, []);
 
   const value = useMemo(
     () => ({

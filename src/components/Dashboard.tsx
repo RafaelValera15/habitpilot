@@ -77,6 +77,7 @@ const Dashboard = () => {
   const insightsPayload = useMemo(() => {
     return habits.map((habit) => ({
       title: habit.title,
+      name: habit.name,
       goal: habit.goal,
       streak: habit.streak,
       lastCompleted: habit.lastCompleted,

@@ -22,6 +22,7 @@ const HabitCard = ({ habit, onEdit, onDelete, onComplete }: HabitCardProps) => {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-900">{habit.title}</h3>
+          <h3 className="text-lg font-semibold text-slate-900">{habit.name}</h3>
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
             {habit.category}
           </span>

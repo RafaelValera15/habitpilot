@@ -29,6 +29,11 @@ const habitSchema = z.object({
     .refine((value) => CATEGORY_SET.has(value), {
       message: "Choose a category",
     }),
+const habitSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  description: z.string().max(200, "Keep it brief").optional().or(z.literal("")),
+  goal: z.string().min(2, "Goal must be at least 2 characters"),
+  category: z.string().min(2, "Category required"),
   frequency: z.enum(["daily", "weekly", "monthly"], {
     message: "Choose a frequency",
   }),
@@ -52,6 +57,7 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
     resolver: zodResolver(habitSchema),
     defaultValues: {
       title: "",
+      name: "",
       description: "",
       goal: "",
       category: "",
@@ -68,6 +74,10 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
         category: CATEGORY_SET.has(initialHabit.category)
           ? initialHabit.category
           : "Other",
+        name: initialHabit.name,
+        description: initialHabit.description ?? "",
+        goal: initialHabit.goal,
+        category: initialHabit.category,
         frequency: (initialHabit.frequency as HabitFormValues["frequency"]) ?? "daily",
       });
     }
@@ -81,6 +91,7 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
     if (!initialHabit) {
       reset({
         title: "",
+        name: "",
         description: "",
         goal: "",
         category: "",
@@ -113,6 +124,17 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
             placeholder="Morning Run"
           />
           {errors.title && <p className="text-xs text-rose-500">{errors.title.message}</p>}
+          <label htmlFor="name" className="text-sm font-medium text-slate-700">
+            Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            {...register("name")}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
+            placeholder="Morning Run"
+          />
+          {errors.name && <p className="text-xs text-rose-500">{errors.name.message}</p>}
         </div>
 
         <div className="space-y-2">
@@ -134,6 +156,13 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
               </option>
             ))}
           </select>
+          <input
+            id="category"
+            type="text"
+            {...register("category")}
+            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
+            placeholder="Fitness"
+          />
           {errors.category && <p className="text-xs text-rose-500">{errors.category.message}</p>}
         </div>
       </div>
