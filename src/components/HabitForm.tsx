@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { db } from "@/lib/firestore"; // 👈 adjust path if needed
+import { db } from "@/lib/firebase"; // 👈 adjust path if needed
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext"; // 👈 optional if you have user context
 import { valibotResolver } from "@hookform/resolvers/valibot";
