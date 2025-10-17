@@ -7,28 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { type Habit, type HabitInput } from "@/lib/firestore";
 
-const CATEGORY_OPTIONS = [
-  "Fitness",
-  "Finance",
-  "Mindfulness",
-  "Productivity",
-  "Learning",
-  "Nutrition",
-  "Wellness",
-  "Other",
-] as const;
-
-const CATEGORY_SET = new Set<string>(CATEGORY_OPTIONS);
-
 const habitSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().max(200, "Keep it brief").optional().or(z.literal("")),
   goal: z.string().min(2, "Goal must be at least 2 characters"),
-  category: z
-    .string()
-    .refine((value) => CATEGORY_SET.has(value), {
-      message: "Choose a category",
-    }),
+  category: z.string().min(2, "Category required"),
   frequency: z.enum(["daily", "weekly", "monthly"], {
     message: "Choose a frequency",
   }),
@@ -51,7 +34,7 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
   } = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
     defaultValues: {
-      title: "",
+      name: "",
       description: "",
       goal: "",
       category: "",
@@ -62,12 +45,10 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
   useEffect(() => {
     if (initialHabit) {
       reset({
-        title: initialHabit.title,
+        name: initialHabit.name,
         description: initialHabit.description ?? "",
         goal: initialHabit.goal,
-        category: CATEGORY_SET.has(initialHabit.category)
-          ? initialHabit.category
-          : "Other",
+        category: initialHabit.category,
         frequency: (initialHabit.frequency as HabitFormValues["frequency"]) ?? "daily",
       });
     }
@@ -80,7 +61,7 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
     });
     if (!initialHabit) {
       reset({
-        title: "",
+        name: "",
         description: "",
         goal: "",
         category: "",
@@ -102,38 +83,30 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium text-slate-700">
-            Title
+          <label htmlFor="name" className="text-sm font-medium text-slate-700">
+            Name
           </label>
           <input
-            id="title"
+            id="name"
             type="text"
-            {...register("title")}
+            {...register("name")}
             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
             placeholder="Morning Run"
           />
-          {errors.title && <p className="text-xs text-rose-500">{errors.title.message}</p>}
+          {errors.name && <p className="text-xs text-rose-500">{errors.name.message}</p>}
         </div>
 
         <div className="space-y-2">
           <label htmlFor="category" className="text-sm font-medium text-slate-700">
             Category
           </label>
-          <select
+          <input
             id="category"
+            type="text"
             {...register("category")}
             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            defaultValue=""
-          >
-            <option value="" disabled hidden>
-              Select a category
-            </option>
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            placeholder="Fitness"
+          />
           {errors.category && <p className="text-xs text-rose-500">{errors.category.message}</p>}
         </div>
       </div>
