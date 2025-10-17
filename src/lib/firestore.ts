@@ -21,6 +21,7 @@ export type HabitFrequency = "daily" | "weekly" | "monthly" | string;
 
 export interface Habit {
   id: string;
+  title: string;
   name: string;
   description?: string;
   goal: string;
@@ -31,6 +32,10 @@ export interface Habit {
   completedDates: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HabitInput {
+  title: string;
   userId: string;
 }
 
@@ -52,6 +57,7 @@ const serialize = (data: DocumentData, id: string): Habit => {
 
   return {
     id,
+    title: data.title ?? data.name,
     name: data.name,
     description: data.description,
     goal: data.goal,

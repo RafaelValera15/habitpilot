@@ -5,6 +5,7 @@ import { BrainCircuit, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface AIHabitSummary {
+  title: string;
   name: string;
   goal: string;
   streak: number;
@@ -28,6 +29,7 @@ const AIInsights = ({ habits, loading = false }: AIInsightsProps) => {
     const summary = habits
       .map((habit) => {
         const lastCompleted = habit.lastCompleted ? new Date(habit.lastCompleted).toDateString() : "never";
+        return `${habit.title} (goal: ${habit.goal}, frequency: ${habit.frequency}, streak: ${habit.streak}, last completed: ${lastCompleted})`;
         return `${habit.name} (goal: ${habit.goal}, frequency: ${habit.frequency}, streak: ${habit.streak}, last completed: ${lastCompleted})`;
       })
       .join("; ");
