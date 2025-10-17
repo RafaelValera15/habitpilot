@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { db } from "@/lib/firestore"; // 👈 adjust path if needed
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext"; // 👈 optional if you have user context
+import { valibotResolver } from "@hookform/resolvers/valibot";
 
-import { type Habit, type HabitInput } from "@/lib/firestore";
-
+// ================================
+// 🧠 SCHEMA SETUP
+// ================================
 const CATEGORY_OPTIONS = [
-  "Fitness",
-  "Finance",
   "Mindfulness",
   "Productivity",
   "Learning",
@@ -21,42 +24,44 @@ const CATEGORY_OPTIONS = [
 const CATEGORY_SET = new Set<string>(CATEGORY_OPTIONS);
 
 const habitSchema = z.object({
-  title: z.string().min(2, "Title must be at least 2 characters"),
-  description: z.string().max(200, "Keep it brief").optional().or(z.literal("")),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  description: z
+    .string()
+    .max(200, "Keep it brief")
+    .optional()
+    .or(z.literal("")),
   goal: z.string().min(2, "Goal must be at least 2 characters"),
   category: z
     .string()
     .refine((value) => CATEGORY_SET.has(value), {
-      message: "Choose a category",
+      message: "Choose a valid category",
     }),
-const habitSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().max(200, "Keep it brief").optional().or(z.literal("")),
-  goal: z.string().min(2, "Goal must be at least 2 characters"),
-  category: z.string().min(2, "Category required"),
-  frequency: z.enum(["daily", "weekly", "monthly"], {
-    message: "Choose a frequency",
-  }),
-});
+  frequency: z
+  .enum(["daily", "weekly", "monthly"])
+  .refine((val) => !!val, { message: "Choose a valid frequency" })
+  });
 
 export type HabitFormValues = z.infer<typeof habitSchema>;
 
+// ================================
+// 🧩 PROPS INTERFACE
+// ================================
 interface HabitFormProps {
-  initialHabit?: Habit | null;
-  onSubmit: (values: HabitInput) => Promise<void>;
-  onCancel?: () => void;
+  onCancel: () => void;
 }
 
-const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
+// ================================
+// 🚀 COMPONENT
+// ================================
+const HabitForm: React.FC<HabitFormProps> = ({ onCancel }) => {
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<HabitFormValues>({
     resolver: zodResolver(habitSchema),
     defaultValues: {
-      title: "",
       name: "",
       description: "",
       goal: "",
@@ -65,169 +70,124 @@ const HabitForm = ({ initialHabit, onSubmit, onCancel }: HabitFormProps) => {
     },
   });
 
-  useEffect(() => {
-    if (initialHabit) {
-      reset({
-        title: initialHabit.title,
-        description: initialHabit.description ?? "",
-        goal: initialHabit.goal,
-        category: CATEGORY_SET.has(initialHabit.category)
-          ? initialHabit.category
-          : "Other",
-        name: initialHabit.name,
-        description: initialHabit.description ?? "",
-        goal: initialHabit.goal,
-        category: initialHabit.category,
-        frequency: (initialHabit.frequency as HabitFormValues["frequency"]) ?? "daily",
-      });
-    }
-  }, [initialHabit, reset]);
+  // 👇 If using AuthContext for current user
+  const { user } = useAuth?.() || {}; // fallback if no context
 
   const submitHandler = async (values: HabitFormValues) => {
-    await onSubmit({
-      ...values,
-      description: values.description || undefined,
-    });
-    if (!initialHabit) {
-      reset({
-        title: "",
-        name: "",
-        description: "",
-        goal: "",
-        category: "",
-        frequency: "daily",
+    try {
+      if (!user) {
+        alert("You must be logged in to create a habit.");
+        return;
+      }
+
+      await addDoc(collection(db, "users", user.uid, "habits"), {
+        ...values,
+        createdAt: serverTimestamp(),
+        completedDays: [],
       });
+
+      alert("✅ Habit successfully added!");
+      reset();
+    } catch (error) {
+      console.error("Error adding habit:", error);
+      alert("⚠️ Failed to add habit. Check console for details.");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(submitHandler)} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit(submitHandler)}
+      className="flex flex-col gap-4 bg-white p-6 rounded-lg shadow-md"
+    >
+      {/* 🧱 Name */}
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          {initialHabit ? "Update habit" : "Create a new habit"}
-        </h3>
-        <p className="text-sm text-slate-500">
-          Define what success looks like and we&apos;ll guide your progress automatically.
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium text-slate-700">
-            Title
-          </label>
-          <input
-            id="title"
-            type="text"
-            {...register("title")}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            placeholder="Morning Run"
-          />
-          {errors.title && <p className="text-xs text-rose-500">{errors.title.message}</p>}
-          <label htmlFor="name" className="text-sm font-medium text-slate-700">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            {...register("name")}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            placeholder="Morning Run"
-          />
-          {errors.name && <p className="text-xs text-rose-500">{errors.name.message}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="category" className="text-sm font-medium text-slate-700">
-            Category
-          </label>
-          <select
-            id="category"
-            {...register("category")}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            defaultValue=""
-          >
-            <option value="" disabled hidden>
-              Select a category
-            </option>
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <input
-            id="category"
-            type="text"
-            {...register("category")}
-            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-            placeholder="Fitness"
-          />
-          {errors.category && <p className="text-xs text-rose-500">{errors.category.message}</p>}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="goal" className="text-sm font-medium text-slate-700">
-          Goal
-        </label>
+        <label className="block text-sm font-medium mb-1">Name</label>
         <input
-          id="goal"
-          type="text"
-          {...register("goal")}
-          className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-          placeholder="Run 5km before 8am"
+          {...register("name")}
+          className="border border-gray-300 rounded p-2 w-full"
+          placeholder="Habit name"
         />
-        {errors.goal && <p className="text-xs text-rose-500">{errors.goal.message}</p>}
+        {errors.name && (
+          <p className="text-red-500 text-sm">{errors.name.message}</p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium text-slate-700">
-          Description
-        </label>
+      {/* 🧱 Description */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Description</label>
         <textarea
-          id="description"
-          rows={3}
           {...register("description")}
-          className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
-          placeholder="Add any notes that will help you stay motivated."
+          className="border border-gray-300 rounded p-2 w-full"
+          placeholder="Optional short description"
         />
-        {errors.description && <p className="text-xs text-rose-500">{errors.description.message}</p>}
+        {errors.description && (
+          <p className="text-red-500 text-sm">{errors.description.message}</p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="frequency" className="text-sm font-medium text-slate-700">
-          Frequency
-        </label>
+      {/* 🧱 Goal */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Goal</label>
+        <input
+          {...register("goal")}
+          className="border border-gray-300 rounded p-2 w-full"
+          placeholder="e.g., Meditate 10 minutes daily"
+        />
+        {errors.goal && (
+          <p className="text-red-500 text-sm">{errors.goal.message}</p>
+        )}
+      </div>
+
+      {/* 🧱 Category */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Category</label>
         <select
-          id="frequency"
+          {...register("category")}
+          className="border border-gray-300 rounded p-2 w-full"
+        >
+          <option value="">Select category</option>
+          {CATEGORY_OPTIONS.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        {errors.category && (
+          <p className="text-red-500 text-sm">{errors.category.message}</p>
+        )}
+      </div>
+
+      {/* 🧱 Frequency */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Frequency</label>
+        <select
           {...register("frequency")}
-          className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
+          className="border border-gray-300 rounded p-2 w-full"
         >
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
         </select>
-        {errors.frequency && <p className="text-xs text-rose-500">{errors.frequency.message}</p>}
+        {errors.frequency && (
+          <p className="text-red-500 text-sm">{errors.frequency.message}</p>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* 🧱 Buttons */}
+      <div className="flex justify-end gap-3 mt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          {isSubmitting ? "Saving..." : initialHabit ? "Update habit" : "Create habit"}
+          Save Habit
         </button>
-        {initialHabit && onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-          >
-            Cancel
-          </button>
-        )}
       </div>
     </form>
   );

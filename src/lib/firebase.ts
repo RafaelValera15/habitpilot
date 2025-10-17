@@ -1,7 +1,15 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { getAnalytics, isSupported as isAnalyticsSupported, type Analytics } from "firebase/analytics";
+import {
+  getAnalytics,
+  isSupported as isAnalyticsSupported,
+  type Analytics,
+} from "firebase/analytics";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // ✅ Add this line
 
+// ==============================
+// 🔧 Firebase Config
+// ==============================
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,12 +21,18 @@ const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey) {
-  throw new Error("Firebase configuration is missing. Did you forget to set environment variables?");
+  throw new Error(
+    "Firebase configuration is missing. Did you forget to set environment variables?"
+  );
 }
 
+// ==============================
+// ⚙️ Initialize App + Analytics
+// ==============================
 let app: FirebaseApp | null = null;
 let analytics: Analytics | null = null;
 
+// ✅ Get or initialize app
 export const getFirebaseApp = (): FirebaseApp => {
   if (!app) {
     app = initializeApp(firebaseConfig);
@@ -26,8 +40,10 @@ export const getFirebaseApp = (): FirebaseApp => {
   return app;
 };
 
+// ✅ Get analytics safely
 export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
   if (analytics) return analytics;
+
   const firebaseApp = getFirebaseApp();
 
   if (typeof window === "undefined") return null;
@@ -37,4 +53,8 @@ export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
   return analytics;
 };
 
-export const auth = getAuth(getFirebaseApp());
+// ==============================
+// 🔥 Initialize Firestore & Auth
+// ==============================
+export const db = getFirestore(getFirebaseApp()); // ✅ Add this
+export const auth = getAuth(getFirebaseApp()); // ✅ Keep this
