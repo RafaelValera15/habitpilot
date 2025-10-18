@@ -47,16 +47,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    if (displayName) {
-      await updateProfile(credential.user, { displayName });
+    setLoading(true);
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      if (displayName) {
+        await updateProfile(credential.user, { displayName });
+      }
+      setUser(credential.user);
+      // Note: loading is cleared by onAuthStateChanged on success
+    } catch (error) {
+      // Ensure UI is not stuck in loading on error
+      setLoading(false);
+      throw error;
     }
-    setUser(credential.user);
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const credential = await signInWithEmailAndPassword(auth, email, password);
-    setUser(credential.user);
+    setLoading(true);
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      setUser(credential.user);
+      // Note: loading is cleared by onAuthStateChanged on success
+    } catch (error) {
+      // Ensure UI is not stuck in loading on error
+      setLoading(false);
+      throw error;
+    }
   }, []);
 
   const signOutUser = useCallback(async () => {
