@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Edit3, Flame, Trash2 } from "lucide-react";
 
-import { type Habit } from "@/lib/firestore";
+import { type Habit } from "@/types/habit";
 import { formatDate, getGoalLabel } from "@/utils/helpers";
 
 interface HabitCardProps {
@@ -42,7 +42,9 @@ const HabitCard = ({ habit, onEdit, onDelete, onComplete }: HabitCardProps) => {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => onComplete(habit.id)}
+            onClick={() => {
+              if (habit.id) onComplete(habit.id);
+            }}
             className={`flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium transition ${
               isActiveToday
                 ? "border-green-200 bg-green-50 text-green-600"
@@ -62,7 +64,9 @@ const HabitCard = ({ habit, onEdit, onDelete, onComplete }: HabitCardProps) => {
           </button>
           <button
             type="button"
-            onClick={() => onDelete(habit.id)}
+            onClick={() => {
+              if (habit.id) onDelete(habit.id);
+            }}
             className="flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1 text-sm text-rose-600 transition hover:bg-rose-50"
           >
             <Trash2 className="h-4 w-4" />

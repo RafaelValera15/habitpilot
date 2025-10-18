@@ -3,7 +3,7 @@
 import { Compass } from "lucide-react";
 
 import HabitCard from "./HabitCard";
-import { type Habit } from "@/lib/firestore";
+import { type Habit } from "@/types/habit";
 
 interface HabitListProps {
   habits: Habit[];

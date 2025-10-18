@@ -2,8 +2,12 @@
 
 export interface Habit {
   id?: string;            // optional because Firebase auto-generates it
-  name: string;
+  title: string;
   description?: string;
+  name: string;
+  streak: number;
+  lastCompleted: string | null;
+  completedDates: string[];
   goal: string;
   category: string;
   frequency: "daily" | "weekly" | "monthly";

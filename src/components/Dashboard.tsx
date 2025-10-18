@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
+
 import HabitForm from "./HabitForm";
 import HabitList from "./HabitList";
 import GoalPathGrid from "./GoalPathGrid";
@@ -13,9 +14,8 @@ import {
   getHabits,
   markHabitComplete,
   updateHabit,
-  type Habit,
-  type HabitInput,
 } from "@/lib/firestore";
+import { Habit, HabitInput } from "@/types/habit";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
@@ -38,7 +38,7 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      if (selectedHabit) {
+      if (selectedHabit && selectedHabit.id) {
         await updateHabit(user.uid, selectedHabit.id, values);
         toast.success("Habit updated.");
       } else {

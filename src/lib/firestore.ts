@@ -19,33 +19,7 @@ import { calculateStreak } from "@/utils/helpers";
 
 export type HabitFrequency = "daily" | "weekly" | "monthly" | string;
 
-export interface Habit {
-  id: string;
-  title: string;
-  name: string;
-  description?: string;
-  goal: string;
-  category: string;
-  frequency: HabitFrequency;
-  streak: number;
-  lastCompleted: string | null;
-  completedDates: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface HabitInput {
-  title: string;
-  userId: string;
-}
-
-export interface HabitInput {
-  name: string;
-  description?: string;
-  goal: string;
-  category: string;
-  frequency: HabitFrequency;
-}
+import { Habit, HabitInput } from "@/types/habit";
 
 const db: Firestore = getFirestore(getFirebaseApp());
 
