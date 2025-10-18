@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase"; // 👈 adjust path if needed
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext"; // 👈 optional if you have user context
 import { valibotResolver } from "@hookform/resolvers/valibot";
+import { Habit, HabitInput } from "@/types/habit";
 
 // ================================
 // 🧠 SCHEMA SETUP
@@ -47,6 +48,8 @@ export type HabitFormValues = z.infer<typeof habitSchema>;
 // 🧩 PROPS INTERFACE
 // ================================
 interface HabitFormProps {
+  initialHabit: Habit | null;
+  onSubmit: (values: HabitInput) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -194,3 +197,4 @@ const HabitForm: React.FC<HabitFormProps> = ({ onCancel }) => {
 };
 
 export default HabitForm;
+

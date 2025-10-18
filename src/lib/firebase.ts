@@ -5,7 +5,7 @@ import {
   type Analytics,
 } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore"; // ✅ Add this line
+import { getFirestore } from "firebase/firestore";
 
 // ==============================
 // 🔧 Firebase Config
@@ -20,32 +20,28 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-if (!firebaseConfig.apiKey) {
-  throw new Error(
-    "Firebase configuration is missing. Did you forget to set environment variables?"
-  );
-}
 
-// ==============================
-// ⚙️ Initialize App + Analytics
-// ==============================
+// Declare these ONCE
 let app: FirebaseApp | null = null;
 let analytics: Analytics | null = null;
 
-// ✅ Get or initialize app
+// Get or initialize Firebase App
 export const getFirebaseApp = (): FirebaseApp => {
   if (!app) {
-    app = initializeApp(firebaseConfig);
+    if (firebaseConfig.projectId) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      console.warn("⚠️ Firebase environment variables not found. Skipping Firebase initialization.");
+    }
   }
-  return app;
+  return app!;
 };
 
-// ✅ Get analytics safely
+// Get analytics safely
 export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
   if (analytics) return analytics;
 
   const firebaseApp = getFirebaseApp();
-
   if (typeof window === "undefined") return null;
   if (!(await isAnalyticsSupported())) return null;
 
